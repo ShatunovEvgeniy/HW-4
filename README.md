@@ -1,5 +1,5 @@
 # HW_4
-Реализация Prototypical Network в рамках домашней работы по курсу ML. Модель описана в README.md ([ml_mipt_dafe/08_Self_Super...  @GitHub](https://github.com/ml-dafe/ml_mipt_dafe/tree/main/08_Self_Supervision/homework#12-исходные-данные-набор-данных-омниглот)) и более полно в оригинальной статье ([Prototypical Networks for ...  @arXiv.org](https://arxiv.org/abs/1703.05175)). 
+Реализация Prototypical Network в рамках домашней работы по курсу ML. Модель описана в README.md ([ml_mipt_dafe/08_Self_Super...  @GitHub](https://github.com/ml-dafe/ml_mipt_dafe/tree/main/08_Self_Supervision/homework#12-исходные-данные-набор-данных-омниглот)) и более полно в оригинальной статье ([Prototypical Networks for ...  @arXiv.org](https://arxiv.org/abs/1703.05175)).
 
 
 Проект выполнен студентами 3 курса МФТИ ПИШ ФАЛТ:
