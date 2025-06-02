@@ -1,0 +1,97 @@
+[tool.poetry]
+name = "ml_hw4_6sem"
+version = "0.1.0"
+description = "ML homework №4."
+authors = ["Shatunov Evgeniy, Ishchenko Igor, Nuryyeva Aynur"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+numpy = "^1.18.5"
+torch = "^2.6.0"
+dvc="^3.59.2"
+wandb="^0.19.11"
+jupyterlab = "^4.4.2"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.1.0"
+pytest = "^8.3.5"
+pytest-cov = "^6.0.0"
+
+[[tool.poetry.packages]]
+include = "src"
+from = "."
+
+[tool.sort.config]
+auto = true
+case-sensitive = false
+sort-python = false
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+# These settings can only be changed using CLI flags.
+addopts = "--cov=src --cov-report=term-missing --cov-report=html --import-mode=importlib"
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "**/__init__.py",
+    "**/config/*.py",
+    "**/tests/*.py",
+    "**/sandbox.py",
+    "**/logger.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+exclude_lines = [
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise NotImplementedError"
+]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+# See https://docs.astral.sh/ruff/settings/#target-version for more info.
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable McCabe complexity ("C901"), errors ("E"), Pyflakes ("F"), isort ("I"),
+# flake8-bandit ('S'), pycodestyle warnings (`W`)
+select = ["C901", "E", "F", "I", "S", "W"]
+ignore = []
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*.py" = ["S"]
+
+[tool.ruff.lint.isort]
+# Until https://github.com/astral-sh/ruff/issues/2600 closed:
+# multi_line_output = 5
+# See https://docs.astral.sh/ruff/settings/#lintisort for more info.
+#known-third-party = ["alembic"]
+known-first-party = ["config"]
+
+[tool.ruff.format]
+# Like Black:
+# Use double quotes for strings.
+# Indent with spaces, rather than tabs.
+# Respect magic trailing commas.
+# Automatically detect the appropriate line ending.
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.bandit]
+skips = ["B101", "B106", "B308", "B311", "B404", "B603", "B608", "B703"]
