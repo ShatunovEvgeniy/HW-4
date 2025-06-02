@@ -160,3 +160,48 @@ def test_read_alphabet_with_non_directory_files(tmp_path):
     assert len(datax) == 2
     assert len(datay) == 2
     assert all(label == "valid_char" for label in datay)
+
+
+def test_load_data_with_augmentation(mock_data_structure):
+    """Test data loading with rotation augmentation"""
+    loader = OmniglotLoader(
+        background_path=os.path.join(mock_data_structure, "images_background"),
+        evaluation_path=os.path.join(mock_data_structure, "images_evaluation"),
+    )
+
+    trainx, trainy, testx, testy = loader.load_data(augment_with_rotations=True)
+
+    # Validate augmented training data
+    assert len(trainx) == 32  # Original 8 * 4 (1 original + 3 rotations)
+    assert len(trainy) == 32
+    assert len(np.unique(trainy)) == 4  # Labels should stay the same
+
+    # Validate test data remains unchanged
+    assert len(testx) == 8
+    assert len(testy) == 8
+
+    # Verify augmented images exist
+    augmented_count = sum(1 for path in trainx if "_rot" in path)
+    assert augmented_count == 24  # 8 images * 3 rotations
+
+
+def test_augmentation_image_creation(mock_data_structure):
+    """Test rotation creates correct image files"""
+    loader = OmniglotLoader(
+        background_path=os.path.join(mock_data_structure, "images_background"),
+        evaluation_path=os.path.join(mock_data_structure, "images_evaluation"),
+    )
+    loader.load_data(augment_with_rotations=True)
+
+    # Check one sample character directory
+    sample_char_dir = os.path.join(mock_data_structure, "images_background/Alphabet1/Alphabet1_char1")
+
+    # Original 2 images + 3 rotations each = 8 files
+    assert len(os.listdir(sample_char_dir)) == 8
+
+    # Verify rotation correctness for one image
+    orig_img = Image.open(os.path.join(sample_char_dir, "image_0.png"))
+    for angle in [90, 180, 270]:
+        rot_img = Image.open(os.path.join(sample_char_dir, f"image_0_rot{angle}.png"))
+        # Rotate back should match original
+        assert rot_img.rotate(-angle).tobytes() == orig_img.tobytes()
