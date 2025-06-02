@@ -38,3 +38,4 @@ cover/
 /wandb/
 /src/wandb
 /model
+**/data/images**
