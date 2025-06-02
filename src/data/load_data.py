@@ -2,6 +2,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
+from PIL import Image
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -87,34 +88,34 @@ class OmniglotLoader:
 
         if augment_with_rotations:
             print("Augmenting data with rotations...")
-            # self._augment_with_rotations()
+            self._augment_with_rotations()
 
         return self.trainx, self.trainy, self.testx, self.testy
 
-    # def _augment_with_rotations(self):
-    #     """
-    #     Augment the dataset by adding 90°, 180°, and 270° rotations of each image.
-    #     """
-    #     # For training data
-    #     rotated_paths = []
-    #     rotated_labels = []
-    #
-    #     for path, label in zip(self.trainx, self.trainy):
-    #         for angle in [90, 180, 270]:
-    #             # Create new path for rotated image
-    #             dirname, filename = os.path.split(path)
-    #             basename, ext = os.path.splitext(filename)
-    #             new_filename = f"{basename}_rot{angle}{ext}"
-    #             new_path = os.path.join(dirname, new_filename)
-    #
-    #             # Rotate and save the image
-    #             img = Image.open(path)
-    #             rotated_img = img.rotate(angle)
-    #             rotated_img.save(new_path)
-    #
-    #             rotated_paths.append(new_path)
-    #             rotated_labels.append(label)
-    #
-    #     # Add rotated data to original data
-    #     self.trainx = np.concatenate([self.trainx, np.array(rotated_paths)])
-    #     self.trainy = np.concatenate([self.trainy, np.array(rotated_labels)])
+    def _augment_with_rotations(self, angles: list = [90, 180, 270]):
+        """
+        Augment the dataset by adding 90°, 180°, and 270° rotations of each image.
+        """
+        # For training data
+        rotated_paths = []
+        rotated_labels = []
+
+        for path, label in zip(self.trainx, self.trainy):
+            for angle in angles:
+                # Create new path for rotated image
+                dirname, filename = os.path.split(path)
+                basename, ext = os.path.splitext(filename)
+                new_filename = f"{basename}_rot{angle}{ext}"
+                new_path = os.path.join(dirname, new_filename)
+
+                # Rotate and save the image
+                img = Image.open(path)
+                rotated_img = img.rotate(angle)
+                rotated_img.save(new_path)
+
+                rotated_paths.append(new_path)
+                rotated_labels.append(label)
+
+        # Add rotated data to original data
+        self.trainx = np.concatenate([self.trainx, np.array(rotated_paths)])
+        self.trainy = np.concatenate([self.trainy, np.array(rotated_labels)])
