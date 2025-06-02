@@ -11,3 +11,11 @@ lint:
 
 hooks:
 	poetry run pre-commit install --install-hooks
+
+install_dataset:
+	wget https://github.com/brendenlake/omniglot/raw/master/python/images_evaluation.zip
+	wget https://github.com/brendenlake/omniglot/raw/master/python/images_background.zip
+	unzip -qq images_background.zip -d src/data/
+	unzip -qq images_evaluation.zip -d src/data/
+	rm images_background.zip
+	rm images_evaluation.zip
