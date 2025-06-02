@@ -78,12 +78,12 @@ class ProtoNet(nn.Module):
         # Data Validation
         if not isinstance(sample, dict):
             raise TypeError("sample must be a dictionary.")
-        if 'images' not in sample or 'n_way' not in sample or 'n_support' not in sample or 'n_query' not in sample:
+        if "images" not in sample or "n_way" not in sample or "n_support" not in sample or "n_query" not in sample:
             raise ValueError("sample must contain 'images', 'n_way', 'n_support', and 'n_query' keys.")
-        images = sample['images']
-        n_way = sample['n_way']
-        n_support = sample['n_support']
-        n_query = sample['n_query']
+        images = sample["images"]
+        n_way = sample["n_way"]
+        n_support = sample["n_support"]
+        n_query = sample["n_query"]
 
         if not isinstance(images, torch.Tensor):
             raise TypeError("'images' must be a torch.Tensor.")
@@ -98,32 +98,32 @@ class ProtoNet(nn.Module):
 
         # Move images to the device
         device = setup_device()
-        images = images.to(device) # (n_way, n_support + n_query, C, H, W)
+        images = images.to(device)  # (n_way, n_support + n_query, C, H, W)
 
         # Encode the images
-        embeddings = self.encoder(images.reshape(-1, *images.shape[2:])).reshape(images.shape[0], images.shape[1], -1) # (n_way, n_support + n_query, embedding_dim)
+        embeddings = self.encoder(images.reshape(-1, *images.shape[2:])).reshape(
+            images.shape[0], images.shape[1], -1
+        )  # (n_way, n_support + n_query, embedding_dim)
 
         # Calculate prototypes
-        prototypes = self._get_prototypes(embeddings, n_way, n_support) # (n_way, embedding_dim)
+        prototypes = self._get_prototypes(embeddings, n_way, n_support)  # (n_way, embedding_dim)
 
         # Extract query embeddings
-        query_embeddings = embeddings[:, n_support:] # (n_way, n_query, embedding_dim)
-        query_embeddings = query_embeddings.reshape(n_way * n_query, -1) # (n_way * n_query, embedding_dim)
+        query_embeddings = embeddings[:, n_support:]  # (n_way, n_query, embedding_dim)
+        query_embeddings = query_embeddings.reshape(n_way * n_query, -1)  # (n_way * n_query, embedding_dim)
 
         # Calculate distances
-        distances = self._get_distances(prototypes, query_embeddings) # (n_way * n_query, n_way)
+        distances = self._get_distances(prototypes, query_embeddings)  # (n_way * n_query, n_way)
 
         # Calculate the loss
-        log_p_y = F.log_softmax(-distances, dim=1) # (n_way * n_query, n_way)
-        target_inds = torch.arange(0, n_way).view(n_way, 1).expand(n_way, n_query).reshape(-1).to(device) # (n_way * n_query)
+        log_p_y = F.log_softmax(-distances, dim=1)  # (n_way * n_query, n_way)
+        target_inds = (
+            torch.arange(0, n_way).view(n_way, 1).expand(n_way, n_query).reshape(-1).to(device)
+        )  # (n_way * n_query)
         loss_val = -log_p_y.gather(1, target_inds.view(-1, 1)).squeeze().mean()
 
         # Calculate accuracy
         _, y_hat = torch.max(log_p_y, dim=1)
         acc_val = torch.eq(y_hat, target_inds).float().mean()
 
-        return loss_val, {
-            'loss': loss_val.item(),
-            'acc': acc_val.item(),
-            'y_hat': y_hat
-        }
+        return loss_val, {"loss": loss_val.item(), "acc": acc_val.item(), "y_hat": y_hat}
