@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from PIL import Image
 from sklearn.preprocessing import LabelEncoder
+from tqdm import tqdm
 
 from src.utils.logger import setup_logger
 
@@ -108,7 +109,7 @@ class OmniglotLoader:
         rotated_paths = []
         rotated_labels = []
 
-        for path, label in zip(self.trainx, self.trainy):
+        for path, label in tqdm(zip(self.trainx, self.trainy), desc="Rotating Images", total=len(self.trainx)):
             for angle in angles:
                 # Create new path for rotated image
                 dirname, filename = os.path.split(path)

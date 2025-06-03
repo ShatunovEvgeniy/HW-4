@@ -3,8 +3,9 @@ from pathlib import Path
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
-from tqdm.notebook import tnrange
+from tqdm import tqdm
 
+import wandb
 from src.data.load_data import OmniglotLoader
 from src.data.sampling import extract_sample
 from src.model.hparams import config
@@ -25,6 +26,7 @@ def train(
     n_query: int,
     max_epoch: int,
     epoch_size: int,
+    use_wandb: bool = True,
 ) -> None:
     """
     Trains the Protonet.
@@ -37,6 +39,7 @@ def train(
     :param n_query: Number of labeled examples per class in the query set.
     :param max_epoch: Max epochs to train on.
     :param epoch_size: Episodes per epoch.
+    :param use_wandb: If True it logs info in wandb.
     :return: None.
     """
     # divide the learning rate by 2 at each epoch, as suggested in paper
@@ -48,7 +51,7 @@ def train(
         running_loss = 0.0
         running_acc = 0.0
 
-        for episode in tnrange(epoch_size, desc="Epoch {:d} train".format(epoch + 1)):
+        for episode in tqdm(range(epoch_size), desc=f"Epoch {epoch + 1} train"):
             sample = extract_sample(n_way, n_support, n_query, train_x, train_y)
             optimizer.zero_grad()
             loss, output = model.set_forward_loss(sample)
@@ -56,6 +59,10 @@ def train(
             running_acc += output["acc"]
             loss.backward()
             optimizer.step()
+            if episode % 100 == 0 and use_wandb:
+                step = epoch * epoch_size + episode
+                metrics = dict(loss=output["loss"], accuracy=output["acc"])
+                wandb.log(metrics, step=step)
 
         epoch_loss = running_loss / epoch_size
         epoch_acc = running_acc / epoch_size
@@ -73,7 +80,7 @@ if __name__ == "__main__":
     data_background_path = PROJECT_ROOT / "data" / "images_background"
     data_evaluation_path = PROJECT_ROOT / "data" / "images_evaluation"
     omniglot = OmniglotLoader(background_path=str(data_background_path), evaluation_path=str(data_evaluation_path))
-    train_x, train_y, test_x, test_y = omniglot.load_data(augment_with_rotations=True)
+    train_x, train_y, test_x, test_y = omniglot.load_data(augment_with_rotations=config["augment_flag"])
 
     # Init model
     model = load_protonet_conv(
@@ -85,6 +92,14 @@ if __name__ == "__main__":
 
     # Init optimizer
     optimizer = optim.Adam(model.parameters(), lr=config["lr"])
+
+    # Initialize wandb session
+    wandb.init(
+        config=config,
+        project="ML Homework-4",
+        name=f"Protonet without SimCLR: {config["n_way"]}-way, {config["n_support"]}-shot, {config["n_query"]}-query",
+    )
+    wandb.watch(model)
 
     # Train
     train(
@@ -98,3 +113,8 @@ if __name__ == "__main__":
         max_epoch=config["max_epoch"],
         epoch_size=config["epoch_size"],
     )
+
+    model.save_model(
+        f"protonet_without_simclr_" f"{config["n_way"]}-way, {config["n_support"]}-shot, {config["n_query"]}-query"
+    )
+    wandb.finish()
