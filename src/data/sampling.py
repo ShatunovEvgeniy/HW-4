@@ -26,6 +26,29 @@ def extract_sample(
              - 'n_support': Size of support set per class.
              - 'n_query': Size of query set per class.
     """
+
+    # Validate input parameters
+    if n_way <= 0:
+        raise ValueError("n_way must be positive")
+    if n_support < 0:
+        raise ValueError("n_support must be non-negative")
+    if n_query < 0:
+        raise ValueError("n_query must be non-negative")
+    if len(datax) != len(datay):
+        raise ValueError("datax and datay must have the same length")
+    if len(datax) == 0:
+        raise ValueError("Input arrays cannot be empty")
+
+    # Check if we have enough unique classes
+    unique_classes = np.unique(datay)
+    if len(unique_classes) < n_way:
+        raise ValueError(f"Not enough unique classes. Requested {n_way}, available {len(unique_classes)}")
+
+    # Check if classes have enough samples
+    for cls in unique_classes:
+        if len(datax[datay == cls]) < (n_support + n_query):
+            raise ValueError(f"Class {cls} doesn't have enough samples")
+
     sample: List[List[np.ndarray]] = []
     K: np.ndarray = np.random.choice(np.unique(datay), n_way, replace=False)
 
