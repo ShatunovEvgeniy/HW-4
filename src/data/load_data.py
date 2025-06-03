@@ -1,5 +1,6 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
@@ -94,9 +95,14 @@ class OmniglotLoader:
         self.testy = self.label_encoder.transform(self.testy)
 
         if augment_with_rotations:
-            angles = [90, 180, 270]
-            self.logger.info(f"Augmenting data with rotations {angles}...")
-            self._augment_with_rotations(angles)
+            full_background_path = Path(__file__).parent.parent.parent / f"{self.background_path}_augmented"
+            full_evaluation_path = Path(__file__).parent.parent.parent / f"{self.evaluation_path}_augmented"
+            if not full_background_path.exists() or not full_evaluation_path.exists():
+                full_background_path.mkdir(parents=True, exist_ok=True)
+                full_evaluation_path.mkdir(parents=True, exist_ok=True)
+                angles = [90, 180, 270]
+                self.logger.info(f"Augmenting data with rotations {angles}...")
+                self._augment_with_rotations(angles)
 
         return self.trainx, self.trainy, self.testx, self.testy
 
@@ -109,10 +115,21 @@ class OmniglotLoader:
         rotated_paths = []
         rotated_labels = []
 
+        data_root = Path(__file__).parent.parent.parent / "data"
+
         for path, label in tqdm(zip(self.trainx, self.trainy), desc="Rotating Images", total=len(self.trainx)):
             for angle in angles:
                 # Create new path for rotated image
                 dirname, filename = os.path.split(path)
+
+                parts = list(Path(dirname).parts)
+                grandparent_dirname = parts[-3]
+                parent_dirname = parts[-2]
+                character_dirname = parts[-1]
+                dirname = data_root / f"{str(grandparent_dirname)}_augmented" / parent_dirname / character_dirname
+                if not dirname.exists():
+                    dirname.mkdir(parents=True, exist_ok=True)
+
                 basename, ext = os.path.splitext(filename)
                 new_filename = f"{basename}_rot{angle}{ext}"
                 new_path = os.path.join(dirname, new_filename)
