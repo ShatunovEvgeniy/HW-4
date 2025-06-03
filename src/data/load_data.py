@@ -7,7 +7,9 @@ from sklearn.preprocessing import LabelEncoder
 
 
 class OmniglotLoader:
-    def __init__(self, background_path: str = "images_background", evaluation_path: str = "images_evaluation"):
+    def __init__(
+        self, background_path: str = "data/images_background", evaluation_path: str = "data/images_evaluation"
+    ):
         """
         Initialize the Omniglot data loader.
 
