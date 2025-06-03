@@ -71,6 +71,39 @@ def train(
         scheduler.step()
 
 
+def test(
+    model: nn.Module,
+    test_x: np.ndarray,
+    test_y: np.ndarray,
+    n_way: int,
+    n_support: int,
+    n_query: int,
+    test_episode: int,
+) -> None:
+    """
+    Tests the Protonet.
+    :param model: Trained model.
+    :param test_x: Images of testing set.
+    :param test_y: Labels of testing set.
+    :param n_way: Number of classes in a classification task.
+    :param n_support: Number of labeled examples per class in the support set.
+    :param n_query: Number of labeled examples per class in the query set.
+    :param test_episode: Number of episodes to test on.
+    :return: None.
+    """
+    running_loss = 0.0
+    running_acc = 0.0
+    for episode in tqdm(range(test_episode)):
+        sample = extract_sample(n_way, n_support, n_query, test_x, test_y)
+        loss, output = model.set_forward_loss(sample)
+        running_loss += output["loss"]
+        running_acc += output["acc"]
+
+    avg_loss = running_loss / test_episode
+    avg_acc = running_acc / test_episode
+    logger.info("Test results -- Loss: {:.4f} Acc: {:.4f}".format(avg_loss, avg_acc))
+
+
 if __name__ == "__main__":
     DEVICE = setup_device()
     logger.info(f"Devise is {DEVICE}")
@@ -112,6 +145,16 @@ if __name__ == "__main__":
         n_query=config["n_query"],
         max_epoch=config["max_epoch"],
         epoch_size=config["epoch_size"],
+    )
+
+    test(
+        model=model,
+        test_x=test_x,
+        test_y=test_y,
+        n_way=config["n_way"],
+        n_support=config["n_support"],
+        n_query=config["n_query"],
+        test_episode=1000,
     )
 
     model.save_model(
