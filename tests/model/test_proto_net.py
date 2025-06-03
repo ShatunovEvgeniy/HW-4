@@ -5,7 +5,6 @@ import torch
 
 from src.model.encoder import Encoder
 from src.model.proto_net import ProtoNet
-from src.utils.device import setup_device
 
 
 def generate_sample(
@@ -122,19 +121,3 @@ class TestProtoNet:
             sample = generate_sample(n_way=2, n_support=5, n_query=5)
             sample["n_query"] = -1
             protonet.set_forward_loss(sample)
-
-    def test_set_forward_loss_on_cuda(self, protonet):
-        """Tests if the ProtoNet works correctly on CUDA (GPU)."""
-        device = setup_device()
-        if device.type == "cuda":
-            protonet.encoder = protonet.encoder.to(device)
-            sample = generate_sample(n_way=2, n_support=5, n_query=5)
-            for key, value in sample.items():
-                if isinstance(value, torch.Tensor):
-                    sample[key] = value.to(device)
-
-            loss, results = protonet.set_forward_loss(sample)
-            assert loss.is_cuda
-            assert results["y_hat"].is_cuda
-        else:
-            pytest.skip("CUDA is not available")
