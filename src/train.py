@@ -7,9 +7,9 @@ from tqdm import tqdm
 
 import wandb
 from src.data.load_data import OmniglotLoader
+from src.data.sampling import extract_sample
 from src.model.hparams import config
 from src.utils.device import setup_device
-from src.utils.extract_sample import extract_sample
 from src.utils.load_protonet_conv import load_protonet_conv
 from src.utils.logger import setup_logger
 
