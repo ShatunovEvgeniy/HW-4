@@ -17,7 +17,7 @@ class PreModel(nn.Module):
         super().__init__()
 
         # Load pretrained ResNet50 model
-        model = torchvision.models.resnet50(pretrained=True)
+        model = torchvision.models.resnet50(weights="DEFAULT")
 
         # Use all layers except final fully connected layer as encoder
         self.encoder = nn.Sequential(*tuple(model.children())[:-1])
