@@ -100,7 +100,7 @@ if __name__ == "__main__":
     wandb.init(
         config=config,
         project="ML Homework-4",
-        name=f"Protonet without SimCLR",
+        name=f"Protonet without SimCLR: {config["n_way"]}-way, {config["n_support"]}-shot, {config["n_query"]}-query",
     )
     wandb.watch(model)
 
@@ -117,5 +117,6 @@ if __name__ == "__main__":
         epoch_size=config["epoch_size"],
     )
 
-    model.save_model("protonet_without_simclr")
+    model.save_model(f"protonet_without_simclr_"
+                     f"{config["n_way"]}-way, {config["n_support"]}-shot, {config["n_query"]}-query")
     wandb.finish()
