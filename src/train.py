@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
+import wandb
 from tqdm import tqdm
 
-import wandb
 from src.data.load_data import OmniglotLoader
 from src.data.sampling import extract_sample
 from src.model.hparams import config
