@@ -4,7 +4,6 @@ import numpy as np
 import torch
 from numpy.typing import NDArray
 from torch.utils.data import Dataset
-from ValueError import ValueError  # For proper error raising
 
 
 class CLDataset(Dataset):
@@ -21,17 +20,19 @@ class CLDataset(Dataset):
     ) -> None:
         self.x_data = x_data
         self.y_data = y_data
+
+        # Initialize augmented data
         self.x_augment = x_augment
-        self.y_augment = y_augment if y_augment is not None else y_data
+        self.y_augment = y_augment
 
         # Validate shapes if augmented data is provided
         if self.x_augment is not None:
             if len(self.x_data) != len(self.x_augment):
                 raise ValueError("Original and augmented data must have the same length")
-            if len(self.y_data) != len(self.y_augment):
-                raise ValueError("Original and augmented labels must have the same length")
-            if not np.array_equal(self.y_data, self.y_augment):
-                raise ValueError("Original and augmented labels must have identical values")
+
+            # Use provided augmented labels or fall back to original labels
+            if self.y_augment is None:
+                self.y_augment = self.y_data
 
     def __len__(self) -> int:
         return len(self.x_data)
