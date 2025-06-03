@@ -1,8 +1,11 @@
+import random
 from pathlib import Path
 from time import gmtime, strftime
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
+import yaml
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -69,10 +72,13 @@ class BaseTrainProcess:
         Uses pin_memory for faster GPU transfer when available.
         """
         data_loader = OmniglotLoader()
-        trainx, trainy, testx, testy = data_loader.load_data(augment_with_rotations=True)
+        trainx, trainy, testx, testy = data_loader.load_data(augment_with_rotations=False)
+        trainx_augment, trainy_augment, testx_augment, testy_augment = data_loader.load_data(
+            augment_with_rotations=True
+        )
 
-        train_dataset = CLDataset(trainx, trainy)
-        valid_dataset = CLDataset(testx, testy)
+        train_dataset = CLDataset(trainx, trainy, trainx_augment, trainy_augment)
+        valid_dataset = CLDataset(testx, testy, testx_augment, testy_augment)
         print("Train size:", len(train_dataset), "Valid size:", len(valid_dataset))
 
         self.train_loader = DataLoader(
@@ -299,3 +305,25 @@ class BaseTrainProcess:
         self.writer.close()
 
         return train_losses, valid_losses
+
+
+def set_seed(seed):
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+
+
+if __name__ == "__main__":
+    with open("hyp_params.yaml", "r") as f:
+        hyps = yaml.load(f, Loader=yaml.SafeLoader)
+
+    print(hyps)
+
+    set_seed(hyps["seed"])
+
+    trainer = BaseTrainProcess(hyps)
+    trainer.device = "cpu"
+    trainer.init_params()
+
+    train_losses, valid_losses = trainer.run()
