@@ -5,6 +5,8 @@ import numpy as np
 from PIL import Image
 from sklearn.preprocessing import LabelEncoder
 
+from src.utils.logger import setup_logger
+
 
 class OmniglotLoader:
     def __init__(
@@ -19,6 +21,8 @@ class OmniglotLoader:
         self.background_path = background_path
         self.evaluation_path = evaluation_path
         self.label_encoder = LabelEncoder()
+
+        self.logger = setup_logger("OmniglotLoader")
 
         self.trainx, self.trainy = None, None
         self.testx, self.testy = None, None
@@ -75,9 +79,9 @@ class OmniglotLoader:
         :param augment_with_rotations: Whether to augment data with 90° rotations
         :returns: (trainx, trainy, testx, testy)
         """
-        print("Loading training data...")
+        self.logger.info("Loading training data...")
         self.trainx, self.trainy = self._read_images(self.background_path)
-        print("Loading test data...")
+        self.logger.info("Loading test data...")
         self.testx, self.testy = self._read_images(self.evaluation_path)
 
         # Fit encoder on ALL possible labels (train + test)
@@ -89,14 +93,16 @@ class OmniglotLoader:
         self.testy = self.label_encoder.transform(self.testy)
 
         if augment_with_rotations:
-            print("Augmenting data with rotations...")
-            self._augment_with_rotations()
+            angles = [90, 180, 270]
+            self.logger.info(f"Augmenting data with rotations {angles}...")
+            self._augment_with_rotations(angles)
 
         return self.trainx, self.trainy, self.testx, self.testy
 
-    def _augment_with_rotations(self, angles: list = [90, 180, 270]):
+    def _augment_with_rotations(self, angles: list):
         """
-        Augment the dataset by adding 90°, 180°, and 270° rotations of each image.
+        Augment the dataset by adding rotations of each image.
+        :param angles: Angles to rotate on.
         """
         # For training data
         rotated_paths = []
