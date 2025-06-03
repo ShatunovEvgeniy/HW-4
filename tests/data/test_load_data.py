@@ -55,8 +55,8 @@ def mock_data_structure(tmp_path):
 def test_initialization():
     """Test that the loader initializes correctly"""
     loader = OmniglotLoader()
-    assert loader.background_path == "images_background"
-    assert loader.evaluation_path == "images_evaluation"
+    assert loader.background_path == "data/images_background"
+    assert loader.evaluation_path == "data/images_evaluation"
     assert loader.trainx is None
     assert loader.trainy is None
 
