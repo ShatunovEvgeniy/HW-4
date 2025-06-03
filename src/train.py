@@ -72,8 +72,9 @@ if __name__ == "__main__":
     # Load data
     data_background_path = PROJECT_ROOT / "data" / "images_background"
     data_evaluation_path = PROJECT_ROOT / "data" / "images_evaluation"
-    omniglot = OmniglotLoader(background_path=str(data_background_path), evaluation_path=str(data_evaluation_path))
-    train_x, train_y, test_x, test_y = omniglot.load_data(augment_with_rotations=True)
+    omniglot = OmniglotLoader(background_path=str(data_background_path),
+                              evaluation_path=str(data_evaluation_path))
+    train_x, train_y, test_x, test_y = omniglot.load_data(augment_with_rotations=config["augment_flag"])
 
     # Init model
     model = load_protonet_conv(

@@ -8,4 +8,5 @@ config = dict(
     x_dim=(3, 28, 28),
     hid_dim=64,
     z_dim=64,
+    augment_flag=True,
 )
