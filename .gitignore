@@ -13,6 +13,7 @@ config.ini
 
 # Логи
 *.log
+logs/
 
 # Системные файлы macOS
 .DS_Store

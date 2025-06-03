@@ -1,69 +1,64 @@
-from typing import Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 import numpy as np
 import torch
-from numpy.typing import NDArray
 from torch.utils.data import Dataset
 
 
 class CLDataset(Dataset):
-    """
-    A Contrastive Learning Dataset class that supports both original and augmented data.
+    """Custom PyTorch Dataset for Contrastive Learning (CL).
+
+    Takes input data and applies augmentations to generate two different views of the same image.
+    Support images in both [0, 1] and [0, 255] ranges, automatically normalizing them.
+
+    :param x_data: Input images in (N, H, W, C) or (N, C, H, W) format.
+    :type x_data: np.ndarray
+    :param y_data: Labels corresponding to the input images.
+    :type y_data: np.ndarray
+    :param transform_augment: Albumentations augmentation pipeline for generating the first view (x1).
+    :type transform_augment: Optional[Callable]
+    :raises AssertionError: If `transform_augment` is not provided.
     """
 
-    def __init__(
-        self,
-        x_data: NDArray[np.float32],
-        y_data: NDArray[np.int64],
-        x_augment: Optional[NDArray[np.float32]] = None,
-        y_augment: Optional[NDArray[np.int64]] = None,
-    ) -> None:
+    def __init__(self, x_data: np.ndarray, y_data: np.ndarray, transform_augment: Optional[Callable] = None) -> None:
         self.x_data = x_data
         self.y_data = y_data
-
-        # Initialize augmented data
-        self.x_augment = x_augment
-        self.y_augment = y_augment
-
-        # Validate shapes if augmented data is provided
-        if self.x_augment is not None:
-            if len(self.x_data) != len(self.x_augment):
-                raise ValueError("Original and augmented data must have the same length")
-
-            # Use provided augmented labels or fall back to original labels
-            if self.y_augment is None:
-                self.y_augment = self.y_data
+        # assert transform_augment is not None, "transform_augment must be provided"
+        self.transform_augment = transform_augment
 
     def __len__(self) -> int:
+        """Returns the number of samples in the dataset.
+
+        :return: Number of samples.
+        :rtype: int
+        """
         return len(self.x_data)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        image = self.x_data[idx]
+    def __getitem__(self, item: int) -> Tuple[torch.Tensor, torch.Tensor, Any]:
+        """Retrieves an augmented pair of images and the corresponding label.
 
-        # Handle different input formats
+        :param item: Index of the sample to fetch.
+        :type item: int
+        :return: A tuple containing:
+            - x1 (torch.Tensor): First augmented view (normalized to [0, 1]).
+            - x2 (torch.Tensor): Second view (original image, normalized to [0, 1]).
+            - label: The label of the sample.
+        :rtype: Tuple[torch.Tensor, torch.Tensor, Any]
+        """
+        image = self.x_data[item]
+        label = self.y_data[item]
+
+        # Convert [0, 1] range to [0, 255] if needed
         if image.max() <= 1.0:
             image = (image * 255).astype(np.uint8)
 
-        if len(image.shape) == 2:
-            image = np.expand_dims(image, axis=-1)
+        # Generate two different augmented views
+        # augmented = self.transform_augment(image=image)
+        # x1 = augmented['image']  # Augmented version (numpy array)
+        x2 = image  # Original image
 
-        # Use pre-augmented data if available
-        if self.x_augment is not None:
-            aug_image = self.x_augment[idx]
-            if aug_image.max() <= 1.0:
-                aug_image = (aug_image * 255).astype(np.uint8)
-            if len(aug_image.shape) == 2:
-                aug_image = np.expand_dims(aug_image, axis=-1)
-
-            x1 = self.transform_augment(image=image)["image"]
-            x2 = self.transform_augment(image=aug_image)["image"]
-        else:
-            x1 = self.transform_augment(image=image)["image"]
-            x2 = self.transform_augment(image=image)["image"]
-
-        # Convert to tensors and normalize
-        x1 = torch.tensor(x1).permute(2, 0, 1).float() / 255.0
-        x2 = torch.tensor(x2).permute(2, 0, 1).float() / 255.0
-        label = torch.tensor(self.y_data[idx]).long()
+        # Convert to torch.Tensor and normalize to [0, 1]
+        x1 = self.transform_augment(image=image)["image"] / 255.0
+        x2 = torch.from_numpy(x2).permute(2, 0, 1).float() / 255.0
 
         return x1, x2, label

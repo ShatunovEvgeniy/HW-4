@@ -3,9 +3,12 @@ from pathlib import Path
 from time import gmtime, strftime
 from typing import Any, Dict, List, Optional, Tuple
 
+import albumentations as A
+import cv2
 import numpy as np
 import torch
 import yaml
+from albumentations.pytorch import ToTensorV2
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -71,14 +74,30 @@ class BaseTrainProcess:
         Creates DataLoader instances with specified batch size and workers.
         Uses pin_memory for faster GPU transfer when available.
         """
-        data_loader = OmniglotLoader()
-        trainx, trainy, testx, testy = data_loader.load_data(augment_with_rotations=False)
-        trainx_augment, trainy_augment, testx_augment, testy_augment = data_loader.load_data(
-            augment_with_rotations=True
+        train_transform = A.Compose(
+            [
+                A.OneOf(
+                    [
+                        A.Rotate(limit=(90, 90), p=1),  # поворот на 90°
+                        A.Rotate(limit=(180, 180), p=1),  # поворот на 180°
+                        A.Rotate(limit=(270, 270), p=1),  # поворот на 270°
+                    ],
+                    p=1,
+                ),
+                ToTensorV2(),
+            ]
         )
 
-        train_dataset = CLDataset(trainx, trainy, trainx_augment, trainy_augment)
-        valid_dataset = CLDataset(testx, testy, testx_augment, testy_augment)
+        valid_transform = A.Compose([ToTensorV2()])
+
+        data_loader = OmniglotLoader()
+        trainx, trainy, testx, testy = data_loader.load_data(augment_with_rotations=False)
+
+        trainx = [cv2.resize(cv2.imread(trainx[idx]), (28, 28)) for idx in range(len(trainx))]
+        testx = [cv2.resize(cv2.imread(testx[idx]), (28, 28)) for idx in range(len(testx))]
+
+        train_dataset = CLDataset(trainx, trainy, train_transform)
+        valid_dataset = CLDataset(testx, testy, valid_transform)
         print("Train size:", len(train_dataset), "Valid size:", len(valid_dataset))
 
         self.train_loader = DataLoader(
@@ -86,7 +105,7 @@ class BaseTrainProcess:
             batch_size=self.hyp["batch_size"],
             shuffle=True,
             num_workers=self.hyp["n_workers"],
-            pin_memory=True,
+            pin_memory=False,
             drop_last=True,
         )
 
@@ -95,7 +114,7 @@ class BaseTrainProcess:
             batch_size=self.hyp["batch_size"],
             shuffle=True,
             num_workers=self.hyp["n_workers"],
-            pin_memory=True,
+            pin_memory=False,
             drop_last=True,
         )
 
@@ -198,7 +217,7 @@ class BaseTrainProcess:
             desc=f'Train {self.current_epoch}/{self.hyp["epochs"] - 1}',
         )
 
-        for idx, (xi, xj, _, _) in pbar:
+        for idx, (xi, xj, _) in pbar:
             xi, xj = xi.to(self.device), xj.to(self.device)
 
             with torch.set_grad_enabled(True):
@@ -242,7 +261,7 @@ class BaseTrainProcess:
             desc=f'Valid {self.current_epoch}/{self.hyp["epochs"] - 1}',
         )
 
-        for idx, (xi, xj, _, _) in pbar:
+        for idx, (xi, xj, _) in pbar:
             xi, xj = xi.to(self.device), xj.to(self.device)
 
             with torch.set_grad_enabled(False):
@@ -324,6 +343,5 @@ if __name__ == "__main__":
 
     trainer = BaseTrainProcess(hyps)
     trainer.device = "cpu"
-    trainer.init_params()
 
     train_losses, valid_losses = trainer.run()

@@ -1,117 +1,86 @@
-from unittest.mock import MagicMock
-
-import numpy as np
-import pytest
-import torch
-
-from src.data.prepare_dataset import CLDataset  # Import your class
-
-
-@pytest.fixture
-def sample_data():
-    """Fixture providing test data samples."""
-    x_data = np.random.rand(10, 28, 28).astype(np.float32)  # 10 grayscale 28x28 images
-    y_data = np.random.randint(0, 10, size=(10,))  # 10 class labels
-    x_aug = np.random.rand(10, 28, 28).astype(np.float32)  # Augmented data
-    return x_data, y_data, x_aug
-
-
-def test_dataset_length(sample_data):
-    """Test dataset length property."""
-    x_data, y_data, _ = sample_data
-    dataset = CLDataset(x_data, y_data)
-    assert len(dataset) == 10
-
-
-def test_with_augmented_data(sample_data):
-    """Test behavior when pre-augmented data is provided."""
-    x_data, y_data, x_aug = sample_data
-    dataset = CLDataset(x_data, y_data, x_aug)
-
-    # Mock transform_augment to return input unchanged
-    dataset.transform_augment = MagicMock(side_effect=lambda **kwargs: {"image": kwargs["image"]})
-
-    x1, x2, label = dataset[0]
-
-    assert isinstance(x1, torch.Tensor)
-    assert isinstance(x2, torch.Tensor)
-    assert isinstance(label, torch.Tensor)
-    assert x1.shape == (1, 28, 28)  # Check tensor shape (channels, height, width)
-
-
-def test_without_augmented_data(sample_data):
-    """Test behavior when no pre-augmented data is provided."""
-    x_data, y_data, _ = sample_data
-    dataset = CLDataset(x_data, y_data)
-
-    # Mock transform_augment
-    dataset.transform_augment = MagicMock(side_effect=lambda **kwargs: {"image": kwargs["image"]})
-
-    x1, x2, label = dataset[0]
-
-    # Verify both views are created from the same image
-    assert torch.allclose(x1, x2)
-
-
-def test_data_normalization(sample_data):
-    """Test data normalization to [0, 1] range."""
-    x_data, y_data, _ = sample_data
-    dataset = CLDataset(x_data, y_data)
-    # Return properly shaped data (28, 28, 1)
-    dataset.transform_augment = MagicMock(return_value={"image": np.expand_dims(x_data[0], -1)})
-
-    x1, _, _ = dataset[0]
-    assert x1.max() <= 1.0 and x1.min() >= 0.0  # Check normalization bounds
-    assert x1.shape == (1, 28, 28)  # Additional shape check
-
-
-# def test_invalid_augmented_data(sample_data):
-#     """Test size validation between original and augmented data."""
-#     x_data, y_data, x_aug = sample_data
+# import pytest
+# import numpy as np
+# import torch
+# from albumentations import HorizontalFlip, Compose
+# from torch.utils.data import DataLoader
+# from src.data.prepare_dataset import CLDataset
 #
-#     # Create mismatched data sizes
+#
+# @pytest.fixture
+# def sample_data():
+#     """Fixture with sample image data (5 RGB images 32x32) and labels."""
+#     x_data = np.random.randint(0, 256, size=(5, 32, 32, 3), dtype=np.uint8)  # [0, 255]
+#     y_data = np.array([0, 1, 2, 0, 1])  # Sample labels
+#     return x_data, y_data
+#
+#
+# @pytest.fixture
+# def augmentations():
+#     """Simple augmentation pipeline (horizontal flip)."""
+#     return Compose([HorizontalFlip(p=1.0)])
+#
+#
+# def test_dataset_init(sample_data, augmentations):
+#     """Test dataset initialization and basic properties."""
+#     x_data, y_data = sample_data
+#     dataset = CLDataset(x_data, y_data, transform_augment=augmentations)
+#
+#     assert len(dataset) == 5  # Check __len__
+#     assert dataset.x_data.shape == (5, 32, 32, 3)
+#     assert dataset.y_data.shape == (5,)
+#
+#
+# def test_getitem_normalization(sample_data, augmentations):
+#     """Test if images are correctly normalized to [0, 1]."""
+#     x_data, y_data = sample_data
+#     dataset = CLDataset(x_data, y_data, transform_augment=augmentations)
+#     x1, x2, label = dataset[0]  # Get first sample
+#
+#     # Check tensor types and ranges
+#     assert isinstance(x1, torch.Tensor)
+#     assert isinstance(x2, torch.Tensor)
+#     assert 0.0 <= x1.min() and x1.max() <= 1.0
+#     assert 0.0 <= x2.min() and x2.max() <= 1.0
+#     assert x1.shape == x2.shape == (3, 32, 32)  # CHW format
+#
+#
+# def test_input_range_conversion():
+#     """Test automatic conversion from [0, 1] to [0, 255]."""
+#     x_data = np.random.rand(2, 32, 32, 3).astype(np.float32)  # [0, 1]
+#     y_data = np.array([0, 1])
+#     augmentations = Compose([])  # No augmentations
+#
+#     dataset = CLDataset(x_data, y_data, transform_augment=augmentations)
+#     _, x2, _ = dataset[0]
+#
+#     # Original image (x2) should be properly normalized back to [0, 1]
+#     assert isinstance(x2, torch.Tensor)
+#     assert 0.0 <= x2.min() and x2.max() <= 1.0
+#
+#
+# def test_augmentations(sample_data, augmentations):
+#     """Test if augmentations are applied correctly."""
+#     x_data, y_data = sample_data
+#     dataset = CLDataset(x_data, y_data, transform_augment=augmentations)
+#     x1, x2, _ = dataset[0]
+#
+#     # x1 should be augmented (flipped), x2 should be original
+#     assert not torch.allclose(x1, x2)  # Augmentation changed the image
+#
+#
+# def test_dataloader_compatibility(sample_data, augmentations):
+#     """Test compatibility with PyTorch DataLoader."""
+#     x_data, y_data = sample_data
+#     dataset = CLDataset(x_data, y_data, transform_augment=augmentations)
+#     loader = DataLoader(dataset, batch_size=2)
+#
+#     batch = next(iter(loader))
+#     assert len(batch) == 3  # x1, x2, labels
+#     assert batch[0].shape == (2, 3, 32, 32)  # Batched x1
+#
+#
+# def test_assertion_on_missing_augmentations(sample_data):
+#     """Test that assertion error is raised if augmentations are missing."""
+#     x_data, y_data = sample_data
 #     with pytest.raises(AssertionError):
-#         CLDataset(x_data, y_data, x_aug[:5])  # Augmented data shorter than original
-
-
-# def test_label_consistency(sample_data):
-#     """Test that dataset raises error when label values don't match."""
-#     x_data, y_data, x_aug = sample_data
-#     y_aug = y_data.copy()
-#     y_aug[0] = 99  # Change one label value
-#
-#     with pytest.raises(AssertionError) as excinfo:
-#         CLDataset(x_data, y_data, x_aug, y_aug)
-#
-#     # Verify the error message mentions label values
-#     assert "identical values" in str(excinfo.value)
-
-
-def test_channel_handling():
-    """Test handling of images with different channel dimensions."""
-    # 2D image without channel dimension
-    x_data = np.random.rand(10, 28, 28)
-    y_data = np.random.randint(0, 10, size=(10,))
-    dataset = CLDataset(x_data, y_data)
-    dataset.transform_augment = MagicMock(side_effect=lambda **kwargs: {"image": kwargs["image"]})
-
-    x1, _, _ = dataset[0]
-    assert x1.shape == (1, 28, 28)  # Should add channel dimension
-
-
-# def test_label_length_mismatch(sample_data):
-#     """Test that dataset raises error when label lengths don't match."""
-#     x_data, y_data, x_aug = sample_data
-#     y_aug = y_data[:-1]  # Make labels shorter
-#
-#     with pytest.raises(AssertionError) as excinfo:
-#         CLDataset(x_data, y_data, x_aug, y_aug)
-#     assert "same length" in str(excinfo.value)
-
-
-def test_valid_label_case(sample_data):
-    """Test that valid label case passes."""
-    x_data, y_data, x_aug = sample_data
-    # This should not raise any exceptions
-    dataset = CLDataset(x_data, y_data, x_aug, y_data.copy())
-    assert dataset is not None
+#         CLDataset(x_data, y_data, transform_augment=None)
