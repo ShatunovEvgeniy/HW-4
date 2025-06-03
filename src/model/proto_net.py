@@ -1,9 +1,9 @@
+from pathlib import Path
 from typing import Any, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pathlib import Path
 
 from src.utils.device import setup_device
 

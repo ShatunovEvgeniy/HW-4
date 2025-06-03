@@ -4,8 +4,8 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-import wandb
 
+import wandb
 from src.data.load_data import OmniglotLoader
 from src.model.hparams import config
 from src.utils.device import setup_device
@@ -61,10 +61,8 @@ def train(
             optimizer.step()
             if episode % 100 == 0 and use_wandb:
                 step = epoch * epoch_size + episode
-                metrics = dict(loss=output["loss"],
-                               accuracy=output["acc"])
-                wandb.log(metrics,
-                          step=step)
+                metrics = dict(loss=output["loss"], accuracy=output["acc"])
+                wandb.log(metrics, step=step)
 
         epoch_loss = running_loss / epoch_size
         epoch_acc = running_acc / epoch_size
@@ -81,8 +79,7 @@ if __name__ == "__main__":
     # Load data
     data_background_path = PROJECT_ROOT / "data" / "images_background"
     data_evaluation_path = PROJECT_ROOT / "data" / "images_evaluation"
-    omniglot = OmniglotLoader(background_path=str(data_background_path),
-                              evaluation_path=str(data_evaluation_path))
+    omniglot = OmniglotLoader(background_path=str(data_background_path), evaluation_path=str(data_evaluation_path))
     train_x, train_y, test_x, test_y = omniglot.load_data(augment_with_rotations=config["augment_flag"])
 
     # Init model
@@ -117,6 +114,7 @@ if __name__ == "__main__":
         epoch_size=config["epoch_size"],
     )
 
-    model.save_model(f"protonet_without_simclr_"
-                     f"{config["n_way"]}-way, {config["n_support"]}-shot, {config["n_query"]}-query")
+    model.save_model(
+        f"protonet_without_simclr_" f"{config["n_way"]}-way, {config["n_support"]}-shot, {config["n_query"]}-query"
+    )
     wandb.finish()

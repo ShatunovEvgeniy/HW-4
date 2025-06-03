@@ -2,9 +2,9 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
-from tqdm import tqdm
 from PIL import Image
 from sklearn.preprocessing import LabelEncoder
+from tqdm import tqdm
 
 from src.utils.logger import setup_logger
 
