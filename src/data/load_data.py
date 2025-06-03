@@ -96,10 +96,8 @@ class OmniglotLoader:
 
         if augment_with_rotations:
             full_background_path = Path(__file__).parent.parent.parent / f"{self.background_path}_augmented"
-            full_evaluation_path = Path(__file__).parent.parent.parent / f"{self.evaluation_path}_augmented"
-            if not full_background_path.exists() or not full_evaluation_path.exists():
+            if not full_background_path.exists():
                 full_background_path.mkdir(parents=True, exist_ok=True)
-                full_evaluation_path.mkdir(parents=True, exist_ok=True)
                 angles = [90, 180, 270]
                 self.logger.info(f"Augmenting data with rotations {angles}...")
                 self._augment_with_rotations(angles)
