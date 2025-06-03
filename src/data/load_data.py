@@ -1,13 +1,19 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
 from sklearn.preprocessing import LabelEncoder
+from tqdm import tqdm
+
+from src.utils.logger import setup_logger
 
 
 class OmniglotLoader:
-    def __init__(self, background_path: str = "images_background", evaluation_path: str = "images_evaluation"):
+    def __init__(
+        self, background_path: str = "data/images_background", evaluation_path: str = "data/images_evaluation"
+    ):
         """
         Initialize the Omniglot data loader.
 
@@ -17,6 +23,8 @@ class OmniglotLoader:
         self.background_path = background_path
         self.evaluation_path = evaluation_path
         self.label_encoder = LabelEncoder()
+
+        self.logger = setup_logger("OmniglotLoader")
 
         self.trainx, self.trainy = None, None
         self.testx, self.testy = None, None
@@ -73,9 +81,9 @@ class OmniglotLoader:
         :param augment_with_rotations: Whether to augment data with 90° rotations
         :returns: (trainx, trainy, testx, testy)
         """
-        print("Loading training data...")
+        self.logger.info("Loading training data...")
         self.trainx, self.trainy = self._read_images(self.background_path)
-        print("Loading test data...")
+        self.logger.info("Loading test data...")
         self.testx, self.testy = self._read_images(self.evaluation_path)
 
         # Fit encoder on ALL possible labels (train + test)
@@ -87,23 +95,39 @@ class OmniglotLoader:
         self.testy = self.label_encoder.transform(self.testy)
 
         if augment_with_rotations:
-            print("Augmenting data with rotations...")
-            self._augment_with_rotations()
+            full_background_path = Path(__file__).parent.parent.parent / f"{self.background_path}_augmented"
+            if not full_background_path.exists():
+                full_background_path.mkdir(parents=True, exist_ok=True)
+                angles = [90, 180, 270]
+                self.logger.info(f"Augmenting data with rotations {angles}...")
+                self._augment_with_rotations(angles)
 
         return self.trainx, self.trainy, self.testx, self.testy
 
-    def _augment_with_rotations(self, angles: list = [90, 180, 270]):
+    def _augment_with_rotations(self, angles: list):
         """
-        Augment the dataset by adding 90°, 180°, and 270° rotations of each image.
+        Augment the dataset by adding rotations of each image.
+        :param angles: Angles to rotate on.
         """
         # For training data
         rotated_paths = []
         rotated_labels = []
 
-        for path, label in zip(self.trainx, self.trainy):
+        data_root = Path(__file__).parent.parent.parent / "data"
+
+        for path, label in tqdm(zip(self.trainx, self.trainy), desc="Rotating Images", total=len(self.trainx)):
             for angle in angles:
                 # Create new path for rotated image
                 dirname, filename = os.path.split(path)
+
+                parts = list(Path(dirname).parts)
+                grandparent_dirname = parts[-3]
+                parent_dirname = parts[-2]
+                character_dirname = parts[-1]
+                dirname = data_root / f"{str(grandparent_dirname)}_augmented" / parent_dirname / character_dirname
+                if not dirname.exists():
+                    dirname.mkdir(parents=True, exist_ok=True)
+
                 basename, ext = os.path.splitext(filename)
                 new_filename = f"{basename}_rot{angle}{ext}"
                 new_path = os.path.join(dirname, new_filename)
