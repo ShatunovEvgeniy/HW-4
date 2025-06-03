@@ -44,6 +44,7 @@ branch = true
 omit = [
     "**/__init__.py",
     "**/config/*.py",
+    "**/hparams.py",
     "**/tests/*.py",
     "**/sandbox.py",
     "**/logger.py",
