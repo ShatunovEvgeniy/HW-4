@@ -60,7 +60,7 @@ def train(
             loss.backward()
             optimizer.step()
             if episode % 100 == 0 and use_wandb:
-                step = epoch * len(train_x) + episode
+                step = epoch * epoch_size + episode
                 metrics = dict(loss=output["loss"],
                                accuracy=output["acc"])
                 wandb.log(metrics,
