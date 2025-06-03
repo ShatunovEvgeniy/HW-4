@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Union
 
 import torch
@@ -127,3 +128,8 @@ class ProtoNet(nn.Module):
         acc_val = torch.eq(y_hat, target_inds).float().mean()
 
         return loss_val, {"loss": loss_val.item(), "acc": acc_val.item(), "y_hat": y_hat}
+
+    def save_model(self, name) -> None:
+        """Save the model's state dictionary to a file."""
+        path = Path(__file__).parent.parent.parent / "model" / name
+        torch.save(self.state_dict(), path)
