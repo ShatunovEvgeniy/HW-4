@@ -17,6 +17,7 @@ pillow = "^11.2.1"
 opencv-python = "^4.11.0.86"
 torchvision = "^0.22.0"
 matplotlib = "^3.10.3"
+seaborn = "^0.13.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.1.0"
