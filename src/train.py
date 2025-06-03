@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
-from tqdm.notebook import tnrange
+from tqdm import tqdm
 import wandb
 
 from src.data.load_data import OmniglotLoader
@@ -51,7 +51,7 @@ def train(
         running_loss = 0.0
         running_acc = 0.0
 
-        for episode in tnrange(epoch_size, desc="Epoch {:d} train".format(epoch + 1)):
+        for episode in tqdm(range(epoch_size), desc=f"Epoch {epoch + 1} train"):
             sample = extract_sample(n_way, n_support, n_query, train_x, train_y)
             optimizer.zero_grad()
             loss, output = model.set_forward_loss(sample)
