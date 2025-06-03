@@ -1,5 +1,6 @@
 import pytest
 import torch
+
 from src.model.identity import Identity
 
 
@@ -63,7 +64,6 @@ class TestIdentity:
         # Verify gradients exist and are correct
         assert x.grad is not None
         assert torch.allclose(x.grad, torch.ones_like(x))
-
 
     def test_serialization(self, identity_layer, tmp_path):
         """Test can be serialized and deserialized correctly"""
