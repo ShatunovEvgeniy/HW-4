@@ -1,6 +1,6 @@
 config = dict(
-    n_way=60,
-    n_support=5,
+    n_way=5,
+    n_support=1,
     n_query=5,
     max_epoch=5,
     epoch_size=2000,
