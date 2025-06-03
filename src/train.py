@@ -117,4 +117,5 @@ if __name__ == "__main__":
         epoch_size=config["epoch_size"],
     )
 
+    model.save_model("protonet_without_simclr")
     wandb.finish()
