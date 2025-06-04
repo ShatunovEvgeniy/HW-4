@@ -16,7 +16,11 @@ from tqdm import tqdm
 from src.data.load_data import OmniglotLoader
 from src.data.prepare_dataset import CLDataset
 from src.model.pre_model import PreModel
+from src.utils.device import setup_device
+from src.utils.logger import setup_logger
 from src.utils.simclr_loss import SimCLR_Loss
+
+logger = setup_logger("BaseTrainProcess")
 
 
 class BaseTrainProcess:
@@ -46,12 +50,12 @@ class BaseTrainProcess:
         :param hyp: Hyperparameters dictionary.
         :param save_dir: Base directory for saving outputs.
         """
-        self.save_dir = Path(save_dir)
+        self.save_dir = Path(save_dir) / "SimCLR"
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
         start_time = strftime("%Y-%m-%d %H-%M-%S", gmtime())
         log_dir = (self.save_dir / "logs" / start_time).as_posix()
-        print("Log dir:", log_dir)
+        logger.info(f"Log dir: {log_dir}")
         self.writer = SummaryWriter(log_dir)
 
         self.best_loss = 1e100
@@ -102,7 +106,7 @@ class BaseTrainProcess:
 
         train_dataset = CLDataset(trainx, trainy, train_transform)
         valid_dataset = CLDataset(testx, testy, valid_transform)
-        print("Train size:", len(train_dataset), "Valid size:", len(valid_dataset))
+        logger.info(f"Train size: {len(train_dataset)}, Valid size: {len(valid_dataset)}")
 
         self.train_loader = DataLoader(
             train_dataset,
@@ -342,17 +346,20 @@ def set_seed(seed):
 
 
 if __name__ == "__main__":
-    with open("hyp_params.yaml", "r") as f:
+    DEVICE = setup_device()
+    logger.info(f"Device is {DEVICE}")
+    PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+    hyp_params_path = PROJECT_ROOT / "src" / "utils" / "hyp_params.yaml"
+    with open(str(hyp_params_path), "r") as f:
         hyps = yaml.load(f, Loader=yaml.SafeLoader)
 
-    print(hyps)
+    logger.info(f"Hyper parameters: {hyps}")
 
     set_seed(hyps["seed"])
 
-    # Указываем папку для сохранения результатов
-    save_directory = "my_training_results"
-
-    trainer = BaseTrainProcess(hyps, save_dir=save_directory)
-    trainer.device = "cpu"
+    save_directory = PROJECT_ROOT / "model"
+    trainer = BaseTrainProcess(hyps, save_dir=str(save_directory))
+    trainer.device = DEVICE
 
     train_losses, valid_losses = trainer.run()
