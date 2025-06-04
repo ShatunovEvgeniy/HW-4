@@ -14,5 +14,5 @@ config = dict(
     z_dim=64,
     augment_flag=True,
     use_simclr=True,
-    simclr_path = PROJECT_ROOT / "model" / "SimCLR" / "checkpoints" / "best.pt",
+    simclr_path=PROJECT_ROOT / "model" / "SimCLR" / "checkpoints" / "best.pt",
 )

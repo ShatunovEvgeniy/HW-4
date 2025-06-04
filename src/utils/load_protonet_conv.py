@@ -1,9 +1,10 @@
 from pathlib import Path
+
 import torch
 
 from src.model.encoder import Encoder
-from src.model.proto_net import ProtoNet
 from src.model.pre_model import PreModel
+from src.model.proto_net import ProtoNet
 
 
 def load_protonet_conv(
