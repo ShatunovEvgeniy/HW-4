@@ -1,10 +1,10 @@
-import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
+import yaml
 
 from src.data.load_data import OmniglotLoader
 from src.data.sampling import extract_sample
@@ -13,7 +13,7 @@ from src.utils.device import setup_device
 from src.utils.load_protonet_conv import load_protonet_conv
 from src.utils.logger import setup_logger
 
-logger = setup_logger("inference")
+logger = setup_logger("Inference")
 
 
 def load_model_and_data(model_path: Path) -> tuple[nn.Module, np.ndarray, np.ndarray]:
@@ -101,7 +101,8 @@ def visualize_inference(y_hat, target_inds, acc_val, title="Inference Results"):
 
 if __name__ == "__main__":
     device = setup_device()
-    model_path = Path(os.getcwd()).parent / "model" / "protonet_without_simclr_5-way, 5-shot, 5-query"
+    PROJECT_ROOT = Path(__file__).parent.parent
+    model_path = PROJECT_ROOT / "model" / "protonet_without_simclr_5-way, 5-shot, 5-query"
     model, test_x, test_y = load_model_and_data(model_path)
     model = model.to(device)
 
@@ -115,5 +116,21 @@ if __name__ == "__main__":
 
     y_hat = output["y_hat"]
     acc_val = output["acc"]
+
+    yaml_path = PROJECT_ROOT / "notebooks" / "inference_results.yaml"
+
+    results = {
+        "predicted_classes": y_hat.cpu().tolist(),  # Convert to list for YAML
+        "target_labels": target_inds.cpu().tolist(),
+        "accuracy": acc_val,
+        "loss": loss.item(),  # Assuming loss is a tensor
+    }
+
+    try:
+        with open(str(yaml_path), "w") as outfile:  # changed
+            yaml.dump(results, outfile, default_flow_style=False)  # Use default_flow_style=False for readability
+        logger.info(f"Results saved to {yaml_path}")
+    except Exception as e:
+        logger.error(f"Error saving YAML: {e}")
 
     visualize_inference(y_hat, target_inds, acc_val)
