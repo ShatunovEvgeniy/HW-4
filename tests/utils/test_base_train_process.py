@@ -1,9 +1,14 @@
 from unittest.mock import MagicMock, patch
 
+import albumentations as A
+import numpy as np
 import pytest
 import torch
 import torch.nn as nn
+from albumentations.pytorch import ToTensorV2
+from torch.utils.data import DataLoader
 
+from src.data.prepare_dataset import CLDataset
 from src.utils.base_train_process import BaseTrainProcess
 
 
@@ -36,10 +41,67 @@ class SimpleModel(nn.Module):
 
 
 @pytest.fixture
-def real_trainer(trainer_config):
+def mock_data():
+    train_x = np.random.randint(0, 256, size=(100, 3, 28, 28), dtype=np.uint8)
+    train_y = np.random.randint(0, 10, size=100)  # 100 labels (0-9)
+    return train_x, train_y, train_x, train_y
+
+
+@pytest.fixture
+def mock_init_data():
+    with patch("src.utils.base_train_process.BaseTrainProcess._init_data") as mock:
+        # Return a properly structured sample dictionary
+        def mock_sample():
+            return
+
+        mock.side_effect = mock_sample
+        yield mock
+
+
+@pytest.fixture
+def real_trainer(trainer_config, mock_init_data, mock_data):
     """Creates a real training process with simplified components."""
     with patch("torch.utils.tensorboard.SummaryWriter"):
         trainer = BaseTrainProcess(trainer_config)
+        train_transform = A.Compose(
+            [
+                A.OneOf(
+                    [
+                        A.Rotate(limit=(90, 90), p=1),  # поворот на 90°
+                        A.Rotate(limit=(180, 180), p=1),  # поворот на 180°
+                        A.Rotate(limit=(270, 270), p=1),  # поворот на 270°
+                    ],
+                    p=1,
+                ),
+                ToTensorV2(),
+            ]
+        )
+
+        valid_transform = A.Compose([A.ToFloat(max_value=255), ToTensorV2()])
+
+        trainx, trainy, testx, testy = mock_data
+
+        train_dataset = CLDataset(trainx, trainy, train_transform)
+        valid_dataset = CLDataset(testx, testy, valid_transform)
+        print("Train size:", len(train_dataset), "Valid size:", len(valid_dataset))
+
+        trainer.train_loader = DataLoader(
+            train_dataset,
+            batch_size=trainer.hyp["batch_size"],
+            shuffle=True,
+            num_workers=trainer.hyp["n_workers"],
+            pin_memory=False,
+            drop_last=True,
+        )
+
+        trainer.valid_loader = DataLoader(
+            valid_dataset,
+            batch_size=trainer.hyp["batch_size"],
+            shuffle=True,
+            num_workers=trainer.hyp["n_workers"],
+            pin_memory=False,
+            drop_last=True,
+        )
 
     # Replace model with simplified version
     trainer.model = SimpleModel()
