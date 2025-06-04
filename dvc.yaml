@@ -1,0 +1,21 @@
+stages:
+  prepare_data:
+    cmd: make install_dataset
+    deps:
+      - Makefile
+    outs:
+      - data/images_background
+      - data/images_evaluation
+  train:
+    cmd: make train
+    deps:
+      - data/images_background
+      - data/images_evaluation
+      - src/train.py
+    outs:
+      - model/model.pt
+  inference:
+    cmd: make inference
+    deps:
+      - src/inference.py
+      - model/model.pt
