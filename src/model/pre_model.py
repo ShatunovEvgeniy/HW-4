@@ -41,7 +41,6 @@ class PreModel(nn.Module):
         """
         # Get encoder features (output shape: [batch_size, 2048, 1, 1])
         out = self.encoder(x)
-
         # Remove spatial dimensions and project
         xp = self.projector(torch.squeeze(out))
 

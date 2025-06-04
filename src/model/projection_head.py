@@ -43,7 +43,7 @@ class ProjectionHead(nn.Module):
         if self.head_type == "nonlinear":
             # Nonlinear projection head (MLP with one hidden layer)
             self.layers = nn.Sequential(
-                LinearLayer(self.in_features, self.hidden_features, use_bias=True, use_bn=True),
+                LinearLayer(self.in_features, self.hidden_features, use_bias=True, use_bn=False),
                 nn.ReLU(),  # Nonlinearity between layers
                 LinearLayer(self.hidden_features, self.out_features, use_bias=False, use_bn=True),
             )
@@ -56,8 +56,8 @@ class ProjectionHead(nn.Module):
         :param x: Input tensor from encoder
         :return: Projected representation in contrastive space
         """
-        # Normalize input before projection
-        x = l2_norm(x)
         # Apply projection layers
         x = self.layers(x)
+        # Normalize input before projection
+        x = l2_norm(x)
         return x

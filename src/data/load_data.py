@@ -81,10 +81,11 @@ class OmniglotLoader:
         :param augment_with_rotations: Whether to augment data with 90° rotations
         :returns: (trainx, trainy, testx, testy)
         """
+        root_path = Path(__file__).parent.parent.parent
         self.logger.info("Loading training data...")
-        self.trainx, self.trainy = self._read_images(self.background_path)
+        self.trainx, self.trainy = self._read_images(str(root_path / self.background_path))
         self.logger.info("Loading test data...")
-        self.testx, self.testy = self._read_images(self.evaluation_path)
+        self.testx, self.testy = self._read_images(str(root_path / self.evaluation_path))
 
         # Fit encoder on ALL possible labels (train + test)
         all_labels = np.concatenate([self.trainy, self.testy])
@@ -95,7 +96,7 @@ class OmniglotLoader:
         self.testy = self.label_encoder.transform(self.testy)
 
         if augment_with_rotations:
-            full_background_path = Path(__file__).parent.parent.parent / f"{self.background_path}_augmented"
+            full_background_path = root_path / f"{self.background_path}_augmented"
             if not full_background_path.exists():
                 full_background_path.mkdir(parents=True, exist_ok=True)
                 angles = [90, 180, 270]

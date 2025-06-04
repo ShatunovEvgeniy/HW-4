@@ -174,7 +174,7 @@ dvc repro
 # Веса модели
 Скачать веса модели можно отсюда
 ```
-[https://drive.google.com/drive/folders/1qRwTOUDswB2EF-Fzp-EL3QQ3lpIIa4y1?usp=sharing](https://drive.google.com/drive/folders/1a-WkA76yqVUotH_WXbMZ5VsqSyIO2g32?usp=sharing)
+https://drive.google.com/drive/folders/1a-WkA76yqVUotH_WXbMZ5VsqSyIO2g32?usp=sharing
 ```
 
 # Отчёт о модели
