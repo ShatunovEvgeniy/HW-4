@@ -36,7 +36,7 @@ class BaseTrainProcess:
                 'weight_decay', 'temperature', 'epochs'.
     """
 
-    def __init__(self, hyp: Dict[str, Any]) -> None:
+    def __init__(self, hyp: Dict[str, Any], save_dir: str = "output") -> None:
         """
         Initializes the training process with given hyperparameters.
 
@@ -44,9 +44,13 @@ class BaseTrainProcess:
         and sets up device configuration (CPU/GPU).
 
         :param hyp: Hyperparameters dictionary.
+        :param save_dir: Base directory for saving outputs.
         """
+        self.save_dir = Path(save_dir)
+        self.save_dir.mkdir(parents=True, exist_ok=True)
+
         start_time = strftime("%Y-%m-%d %H-%M-%S", gmtime())
-        log_dir = (Path("logs") / start_time).as_posix()
+        log_dir = (self.save_dir / "logs" / start_time).as_posix()
         print("Log dir:", log_dir)
         self.writer = SummaryWriter(log_dir)
 
@@ -88,7 +92,7 @@ class BaseTrainProcess:
             ]
         )
 
-        valid_transform = A.Compose([ToTensorV2()])
+        valid_transform = A.Compose([A.ToFloat(max_value=255), ToTensorV2()])
 
         data_loader = OmniglotLoader()
         trainx, trainy, testx, testy = data_loader.load_data(augment_with_rotations=False)
@@ -292,8 +296,12 @@ class BaseTrainProcess:
         :return: Tuple of (train_losses, valid_losses) where each is a
                  list of loss values per epoch.
         """
-        best_w_path = "best.pt"
-        last_w_path = "last.pt"
+        # Создаем подпапки для чекпоинтов
+        checkpoints_dir = self.save_dir / "checkpoints"
+        checkpoints_dir.mkdir(exist_ok=True)
+
+        best_w_path = checkpoints_dir / "best.pt"
+        last_w_path = checkpoints_dir / "last.pt"
 
         train_losses = []
         valid_losses = []
@@ -312,14 +320,14 @@ class BaseTrainProcess:
             loss_valid = self.valid_step()
             valid_losses.append(loss_valid)
 
-            self.save_checkpoint(loss_valid, best_w_path)
+            self.save_checkpoint(loss_valid, best_w_path.as_posix())
             lr = self.optimizer.param_groups[0]["lr"]
 
             self.writer.add_scalar("Train/Loss", loss_train[0], epoch)
             self.writer.add_scalar("Valid/Loss", loss_valid[0], epoch)
             self.writer.add_scalar("Lr", lr, epoch)
 
-        self.save_model(last_w_path)
+        self.save_model(last_w_path.as_posix())
         torch.cuda.empty_cache()
         self.writer.close()
 
@@ -341,7 +349,10 @@ if __name__ == "__main__":
 
     set_seed(hyps["seed"])
 
-    trainer = BaseTrainProcess(hyps)
+    # Указываем папку для сохранения результатов
+    save_directory = "my_training_results"
+
+    trainer = BaseTrainProcess(hyps, save_dir=save_directory)
     trainer.device = "cpu"
 
     train_losses, valid_losses = trainer.run()

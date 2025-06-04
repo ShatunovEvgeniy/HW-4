@@ -1,7 +1,9 @@
 from typing import Any, Callable, Optional, Tuple
 
+import albumentations as A
 import numpy as np
 import torch
+from albumentations.pytorch import ToTensorV2
 from torch.utils.data import Dataset
 
 
@@ -21,9 +23,10 @@ class CLDataset(Dataset):
     """
 
     def __init__(self, x_data: np.ndarray, y_data: np.ndarray, transform_augment: Optional[Callable] = None) -> None:
+        if transform_augment is None:
+            raise ValueError("transform_augment must be provided")
         self.x_data = x_data
         self.y_data = y_data
-        # assert transform_augment is not None, "transform_augment must be provided"
         self.transform_augment = transform_augment
 
     def __len__(self) -> int:
@@ -49,16 +52,20 @@ class CLDataset(Dataset):
         label = self.y_data[item]
 
         # Convert [0, 1] range to [0, 255] if needed
-        if image.max() <= 1.0:
+        if isinstance(image, np.ndarray) and image.max() <= 1.0:
             image = (image * 255).astype(np.uint8)
 
-        # Generate two different augmented views
-        # augmented = self.transform_augment(image=image)
-        # x1 = augmented['image']  # Augmented version (numpy array)
-        x2 = image  # Original image
+        # Apply augmentations (should include ToTensorV2)
+        augmented = self.transform_augment(image=image)
+        x1 = augmented["image"]  # Should already be tensor from ToTensorV2
 
-        # Convert to torch.Tensor and normalize to [0, 1]
-        x1 = self.transform_augment(image=image)["image"] / 255.0
-        x2 = torch.from_numpy(x2).permute(2, 0, 1).float() / 255.0
+        # For x2 we need to apply same normalization but without augmentations
+        # Create minimal transform with just ToTensorV2
+        to_tensor_transform = A.Compose([ToTensorV2()])
+        x2 = to_tensor_transform(image=image)["image"]
+
+        # Normalize both tensors to [0, 1]
+        x1 = x1.float() / 255.0
+        x2 = x2.float() / 255.0
 
         return x1, x2, label
