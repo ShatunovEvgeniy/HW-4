@@ -20,3 +20,9 @@ install_dataset:
 	unzip -qq images_evaluation.zip -d data/
 	rm images_background.zip
 	rm images_evaluation.zip
+
+make train:
+	poetry run python src/train.py
+
+make inference:
+    poetry run python src/inference.py
