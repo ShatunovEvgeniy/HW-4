@@ -17,7 +17,7 @@ class ProtoNet(nn.Module):
     Classification is performed by assigning query examples to the nearest prototype.
     """
 
-    def __init__(self, encoder: nn.Module):
+    def __init__(self, encoder: nn.Module, train_encoder: bool = True):
         """
         Initializes the ProtoNet.
 
@@ -25,6 +25,9 @@ class ProtoNet(nn.Module):
         """
         super(ProtoNet, self).__init__()
         self.encoder = encoder
+        if not train_encoder:
+            for p in encoder.parameters():
+                p.requires_grad = False
 
     def _get_prototypes(self, embeddings: torch.Tensor, n_way: int, n_support: int) -> torch.Tensor:
         """
