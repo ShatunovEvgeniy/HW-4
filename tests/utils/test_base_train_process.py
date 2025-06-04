@@ -187,12 +187,91 @@ def test_device_setup(real_trainer):
     assert next(real_trainer.model.parameters()).device.type == real_trainer.device
 
 
-def test_seed_reproducibility(trainer_config):
+def test_seed_reproducibility(trainer_config, mock_init_data, mock_data):
     """Tests result reproducibility with fixed seed."""
     # Create two separate training processes
     with patch("torch.utils.tensorboard.SummaryWriter"):
         trainer1 = BaseTrainProcess(trainer_config)
+        train_transform = A.Compose(
+            [
+                A.OneOf(
+                    [
+                        A.Rotate(limit=(90, 90), p=1),  # поворот на 90°
+                        A.Rotate(limit=(180, 180), p=1),  # поворот на 180°
+                        A.Rotate(limit=(270, 270), p=1),  # поворот на 270°
+                    ],
+                    p=1,
+                ),
+                ToTensorV2(),
+            ]
+        )
+
+        valid_transform = A.Compose([A.ToFloat(max_value=255), ToTensorV2()])
+
+        trainx, trainy, testx, testy = mock_data
+
+        train_dataset = CLDataset(trainx, trainy, train_transform)
+        valid_dataset = CLDataset(testx, testy, valid_transform)
+        print("Train size:", len(train_dataset), "Valid size:", len(valid_dataset))
+
+        trainer1.train_loader = DataLoader(
+            train_dataset,
+            batch_size=trainer1.hyp["batch_size"],
+            shuffle=True,
+            num_workers=trainer1.hyp["n_workers"],
+            pin_memory=False,
+            drop_last=True,
+        )
+
+        trainer1.valid_loader = DataLoader(
+            valid_dataset,
+            batch_size=trainer1.hyp["batch_size"],
+            shuffle=True,
+            num_workers=trainer1.hyp["n_workers"],
+            pin_memory=False,
+            drop_last=True,
+        )
+
         trainer2 = BaseTrainProcess(trainer_config)
+        train_transform = A.Compose(
+            [
+                A.OneOf(
+                    [
+                        A.Rotate(limit=(90, 90), p=1),  # поворот на 90°
+                        A.Rotate(limit=(180, 180), p=1),  # поворот на 180°
+                        A.Rotate(limit=(270, 270), p=1),  # поворот на 270°
+                    ],
+                    p=1,
+                ),
+                ToTensorV2(),
+            ]
+        )
+
+        valid_transform = A.Compose([A.ToFloat(max_value=255), ToTensorV2()])
+
+        trainx, trainy, testx, testy = mock_data
+
+        train_dataset = CLDataset(trainx, trainy, train_transform)
+        valid_dataset = CLDataset(testx, testy, valid_transform)
+        print("Train size:", len(train_dataset), "Valid size:", len(valid_dataset))
+
+        trainer2.train_loader = DataLoader(
+            train_dataset,
+            batch_size=trainer2.hyp["batch_size"],
+            shuffle=True,
+            num_workers=trainer2.hyp["n_workers"],
+            pin_memory=False,
+            drop_last=True,
+        )
+
+        trainer2.valid_loader = DataLoader(
+            valid_dataset,
+            batch_size=trainer2.hyp["batch_size"],
+            shuffle=True,
+            num_workers=trainer2.hyp["n_workers"],
+            pin_memory=False,
+            drop_last=True,
+        )
 
     # Configure identical mocks for both
     mock_loss = [0.5]
