@@ -14,9 +14,11 @@ wandb = "^0.19.11"
 jupyterlab = "^4.4.2"
 scikit-learn = "^1.6.1"
 pillow = "^11.2.1"
+albumentations = "^2.0.7"
 opencv-python = "^4.11.0.86"
 torchvision = "^0.22.0"
 matplotlib = "^3.10.3"
+tensorboard = "^2.19.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.1.0"
