@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Union
 
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.optim as optim
 import wandb
@@ -71,7 +73,7 @@ def train(
         scheduler.step()
 
 
-def test(
+def model_test(
     model: nn.Module,
     test_x: np.ndarray,
     test_y: np.ndarray,
@@ -79,7 +81,7 @@ def test(
     n_support: int,
     n_query: int,
     test_episode: int,
-) -> None:
+) -> dict[str, Union[float, torch.Tensor]]:
     """
     Tests the Protonet.
     :param model: Trained model.
@@ -102,6 +104,7 @@ def test(
     avg_loss = running_loss / test_episode
     avg_acc = running_acc / test_episode
     logger.info("Test results -- Loss: {:.4f} Acc: {:.4f}".format(avg_loss, avg_acc))
+    return output
 
 
 if __name__ == "__main__":
@@ -147,7 +150,7 @@ if __name__ == "__main__":
         epoch_size=config["epoch_size"],
     )
 
-    test(
+    model_test(
         model=model,
         test_x=test_x,
         test_y=test_y,

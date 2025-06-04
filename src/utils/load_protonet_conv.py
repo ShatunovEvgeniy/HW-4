@@ -1,4 +1,9 @@
+from pathlib import Path
+
+import torch
+
 from src.model.encoder import Encoder
+from src.model.pre_model import PreModel
 from src.model.proto_net import ProtoNet
 
 
@@ -28,3 +33,29 @@ def load_protonet_conv(
     encoder = Encoder(in_channels=x_dim[0])  # Use in_channels from x_dim
 
     return ProtoNet(encoder)
+
+
+def load_protonet_with_simCLR(sim_clr_path: Path) -> ProtoNet:
+    """
+    Loads a ProtoNet model with a pretrained SimCLR model.
+
+    This function constructs a ProtoNet with a pretrained SimCLR.
+
+    :param sim_clr_path: Path to weights of SimCLR.
+    :return: ProtoNet: The constructed ProtoNet model.
+    """
+    if not isinstance(sim_clr_path, Path):
+        raise TypeError("sim_clr_path must be a Path.")
+
+    try:
+        sim_clr = PreModel()
+        state_dict = torch.load(str(sim_clr_path))["model_state_dict"]
+        sim_clr.load_state_dict(state_dict)
+    except FileNotFoundError:
+        print(f"Weights file not found at {sim_clr_path}")
+        exit()
+    except Exception as e:
+        print(f"Error loading state_dict: {e}")
+        exit()
+
+    return ProtoNet(sim_clr, False)

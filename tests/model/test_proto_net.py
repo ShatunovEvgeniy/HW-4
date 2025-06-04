@@ -5,6 +5,7 @@ import torch
 
 from src.model.encoder import Encoder
 from src.model.proto_net import ProtoNet
+from src.utils.device import setup_device
 
 
 def generate_sample(
@@ -33,7 +34,8 @@ def generate_sample(
 @pytest.fixture
 def protonet(encoder):
     """Pytest fixture to create a ProtoNet instance."""
-    return ProtoNet(encoder=encoder)
+    device = setup_device()
+    return ProtoNet(encoder=encoder).to(device)
 
 
 @pytest.fixture
@@ -87,8 +89,9 @@ class TestProtoNet:
 
     def test_set_forward_loss_with_grayscale(self):
         """Tests set_forward_loss with a grayscale input."""
+        device = setup_device()
         sample = generate_sample(n_way=2, n_support=5, n_query=5, in_channels=1)  # Grayscale
-        protonet = ProtoNet(encoder=Encoder(in_channels=1))
+        protonet = ProtoNet(encoder=Encoder(in_channels=1)).to(device)
         loss, results = protonet.set_forward_loss(sample)
         assert loss.shape == torch.Size([])
         assert results["y_hat"].shape == torch.Size([10])

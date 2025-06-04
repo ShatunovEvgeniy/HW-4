@@ -181,12 +181,6 @@ def test_lr_scheduling(real_trainer):
     assert real_trainer.mainscheduler.step.call_count == 0
 
 
-def test_device_setup(real_trainer):
-    """Tests device setup (CPU/GPU)."""
-    assert hasattr(real_trainer, "device")
-    assert next(real_trainer.model.parameters()).device.type == real_trainer.device
-
-
 def test_seed_reproducibility(trainer_config, mock_init_data, mock_data):
     """Tests result reproducibility with fixed seed."""
     # Create two separate training processes

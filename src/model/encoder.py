@@ -16,7 +16,7 @@ class Encoder(nn.Module):
         """
         Initializes the Encoder.
 
-        :param in_channels: The number of input channels (e.g., 3 for RGB images).  Defaults to 3.
+        :param in_channels: The number of input channels (e.g., 3 for RGB images). Defaults to 3.
         """
         super(Encoder, self).__init__()
 

@@ -179,7 +179,7 @@ https://drive.google.com/drive/folders/1a-WkA76yqVUotH_WXbMZ5VsqSyIO2g32?usp=sha
 
 # Отчёт о модели
 Демонстрацию работы модели можно посмотреть в папке notebooks.
-Графики обучения с предобученными эмбедингами и без: https://api.wandb.ai/links/shatunov868-mipt/aioj4hsl.
+Графики обучения: https://api.wandb.ai/links/shatunov868-mipt/j09sz7da.
 # Структура проекта
 
 ```
